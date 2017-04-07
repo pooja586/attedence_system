@@ -20,6 +20,7 @@ def create_attendance_record(mac,employee,att_date,time):
 					attendance_doc.employee = employee
 					attendance_doc.att_date = att_date
 					attendance_doc.save(ignore_permissions=True)
+					# attendance_doc.submit()
 
 				attendance_log = frappe.new_doc("Attendance Log")
 				attendance_log.employee = employee
@@ -42,7 +43,7 @@ def create_attendance_record(mac,employee,att_date,time):
 
 @frappe.whitelist(allow_guest=True)
 def status_absent():
-	emp_name = frappe.db.sql("""select employee, employee_name, company from `tabEmployee` where employee  NOT IN ( select employee from `tabAttendance` where att_date = "2017-04-06")""", as_dict=1)
+	emp_name = frappe.db.sql("""select employee, employee_name, company from `tabEmployee` where employee  NOT IN ( select employee from `tabAttendance` where att_date = "2017-01-29")""", as_dict=1)
 	
 	print "\n\n\n", emp_name 
 	if emp_name:
@@ -50,7 +51,7 @@ def status_absent():
 			for emp_details in emp_name:
 				print "----------\n\n\n", emp_details
 				attendance_doc = frappe.new_doc("Attendance")
-				attendance_doc.att_date = "2017-04-06"
+				attendance_doc.att_date = "2017-01-29"
 				attendance_doc.employee = emp_details["employee"]          
 				attendance_doc.employee_name = emp_details["employee_name"]        
 				attendance_doc.company = emp_details["company"]	         
@@ -62,5 +63,30 @@ def status_absent():
 			print frappe.get_traceback()
 			raise e
 
+@frappe.whitelist(allow_guest=True)
+def time_calculations():
+	times = frappe.db.sql(""" select name, employee, MIN(time), MAX(time), count(time) from `tabAttendance Log` where att_date="2017-01-29" GROUP BY employee""", as_dict=1)
+	print "\n\n\n\n", times
 
+	if times:
+		try:
+			for time_details in times:
+				if time_details.get("count(time)") % 2 == 0:
+					print "\n\n\n\n\neven",time_details.get("count(time)")
+					attendance = frappe.get_doc("Attendance", time_details.get("name"))
+					attendance.in_time = time_details["MIN(time)"]
+					attendance.out_time = time_details["MAX(time)"]
+					attendance.save(ignore_permissions=True)
+					attendance.submit()
+				else:
+					print "\n\n\n\n\n",time_details.get("count(time)")
+					attendance = frappe.get_doc("Attendance", time_details.get("name"))
+					attendance.in_time = time_details["MIN(time)"]
+					attendance.out_time = "19:00:00"
+					attendance.save(ignore_permissions=True)
+					attendance.submit()
+
+		except Exception, e:
+			print frappe.get_traceback()
+			raise e 
 
