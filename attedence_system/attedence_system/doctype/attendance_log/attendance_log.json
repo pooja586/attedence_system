@@ -146,7 +146,7 @@
    "ignore_user_permissions": 0, 
    "ignore_xss_filter": 0, 
    "in_filter": 1, 
-   "in_list_view": 0, 
+   "in_list_view": 1, 
    "in_standard_filter": 1, 
    "label": "Status", 
    "length": 0, 
@@ -384,7 +384,11 @@
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 0, 
+<<<<<<< HEAD
  "modified": "2017-04-07 16:19:22.573599", 
+=======
+ "modified": "2017-04-07 16:34:41.124335", 
+>>>>>>> f66f93b265a90a48e50c35b868dd192937b28f07
  "modified_by": "Administrator", 
  "module": "Attedence System", 
  "name": "Attendance Log", 

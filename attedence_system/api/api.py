@@ -20,14 +20,13 @@ def create_attendance_record(mac,employee,att_date,time):
 					attendance_doc.employee = employee
 					attendance_doc.att_date = att_date
 					attendance_doc.save(ignore_permissions=True)
-					# attendance_doc.submit()
+
 
 				attendance_log = frappe.new_doc("Attendance Log")
 				attendance_log.employee = employee
 				attendance_log.att_date = att_date
 				attendance_log.time = time
-				attendance_log.save(ignore_permissions=True)
-				#attendance_doc.submit()
+				attendance_log.save(ignore_permissions=True)		
 				#attendance_log.submit()
 				return "success"
 			except Exception, e:
@@ -63,6 +62,7 @@ def status_absent():
 			print frappe.get_traceback()
 			raise e
 
+
 @frappe.whitelist(allow_guest=True)
 def time_calculations():
 	times = frappe.db.sql(""" select name, employee, MIN(time), MAX(time), count(time) from `tabAttendance Log` where att_date="2017-01-29" GROUP BY employee""", as_dict=1)
@@ -89,4 +89,5 @@ def time_calculations():
 		except Exception, e:
 			print frappe.get_traceback()
 			raise e 
+
 
