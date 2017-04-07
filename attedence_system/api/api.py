@@ -77,4 +77,11 @@ def status_absent():
 			raise e
 
 
-	
+# @frappe.whitelist(allow_guest=True)
+# def time_calculations():
+# 	times = frappe.db.sql("""select employee, MIN(time), MAX(time), count(time) from `tabAttendance Log` where att_date="2017-04-07" GROUP BY employee""", as_dict=1)	
+
+# 	if times:
+# 		try:
+# 			for time_details in times:
+				
