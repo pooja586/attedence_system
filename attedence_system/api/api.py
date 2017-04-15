@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 import json
 import frappe
+from datetime import datetime
+from frappe.utils import nowdate
 from uuid import getnode as get_mac
 
 
@@ -20,6 +22,7 @@ def create_attendance_record(mac,employee,att_date,time):
 					attendance_doc.employee = employee
 					attendance_doc.att_date = att_date
 					attendance_doc.save(ignore_permissions=True)
+					# attendance_doc.submit()
 
 
 				attendance_log = frappe.new_doc("Attendance Log")
@@ -27,7 +30,7 @@ def create_attendance_record(mac,employee,att_date,time):
 				attendance_log.att_date = att_date
 				attendance_log.time = time
 				attendance_log.save(ignore_permissions=True)		
-				#attendance_log.submit()
+				attendance_log.submit()
 				return "success"
 			except Exception, e:
 				print frappe.get_traceback()
@@ -41,52 +44,72 @@ def create_attendance_record(mac,employee,att_date,time):
 
 
 @frappe.whitelist(allow_guest=True)
+# To mark the status as "Absent" of the employees, those are on leave .
 def status_absent():
-	emp_name = frappe.db.sql("""select employee, employee_name, company from `tabEmployee` where employee  NOT IN ( select employee from `tabAttendance` where att_date = "2017-04-09")""", as_dict=1)
+	emp_name = frappe.db.sql("""select employee, employee_name, company from `tabEmployee` where employee  NOT IN ( select employee from `tabAttendance` where att_date = curdate())""", as_dict=1)
 	
-	print "\n\n\n", emp_name 
 	if emp_name:
 		try:
 			for emp_details in emp_name:
-				print "----------\n\n\n", emp_details
 				attendance_doc = frappe.new_doc("Attendance")
-				attendance_doc.att_date = "2017-04-09"
+				attendance_doc.att_date = nowdate()
 				attendance_doc.employee = emp_details["employee"]          
 				attendance_doc.employee_name = emp_details["employee_name"]        
 				attendance_doc.company = emp_details["company"]	         
 				attendance_doc.status = "Absent"
 				attendance_doc.save(ignore_permissions=True)
-				attendance_doc.submit()
-
+				# attendance_doc.submit()
+			
 		except Exception, e:
 			print frappe.get_traceback()
 			raise e
 
 
 @frappe.whitelist(allow_guest=True)
+# to calculate total time duration in in_time (mintime) and out_time(maxtime)
 def time_calculations():
-	times = frappe.db.sql(""" select name, employee, MIN(time) as min, MAX(time) as max, count(time) as count from `tabAttendance Log` where att_date="2017-04-09" GROUP BY employee""", as_dict=1)
-	print "\n\n\n\n-----------------", times
-
+	times = frappe.db.sql(""" select att.name as name1, attlog.employee as employee,
+							  attlog.employee_name as employee_name, att.att_date as a_date, convert(attlog.cnt, signed) as counts, 
+							  attlog.max as maxtime, attlog.min as mintime
+							  from `tabAttendance` as att , 
+							  (select employee, employee_name, max(time) as max, min(time) as min, count(*) as cnt  
+							  from `tabAttendance Log` where att_date = curdate() group by employee) 
+							  as attlog where attlog.employee =att.employee and att_date = curdate() """, 
+							  as_dict=1)	
+	
+	print "-----------times",times
 	if times:
 		try:
 			for time_details in times:
-				print "\n\n\n\n-------------- in for"
-				if time_details.get("count") % 2 == 0:
-					print "\n\n\n\n\neven********",time_details.get("count")
-					print "\n\n\n\n\nname********",time_details.get("name")
-					attendance = frappe.get_doc("Attendance", time_details.get("name"))
-					attendance.in_time = time_details["min"]
-					attendance.out_time = time_details["max"]
+				print "count===",time_details["counts"]
+				print "count===",time_details["maxtime"]
+				print "count===",time_details["mintime"]
+				
+
+				if (time_details["counts"] % 2) == 0:
+										
+										
+					attendance = frappe.get_doc("Attendance", time_details["name1"])
+					print "\n\n\nattendance____if-----------",attendance
+					attendance.time_in = time_details["mintime"]
+					attendance.time_out = time_details["maxtime"]
+					time_diff=frappe.utils.data.time_diff(time_details["maxtime"],time_details["mintime"])
+					print "\n\n----------------timediff-----",type(time_diff),time_diff					
+
+					attendance.total_hours = str(time_diff)
 					attendance.save(ignore_permissions=True)
 					attendance.submit()
+
 				else:
-					print "\n\n\n\n-------------- in else"
-					print "\n\n\n\n\n",time_details.get("count")
-					print "\n\n\n\n\nname********",time_details.get("name")
-					attendance = frappe.get_doc("Attendance", time_details.get("name"))
-					attendance.in_time = time_details["min"]
-					attendance.out_time = "19:00:00"
+					
+					attendance = frappe.get_doc("Attendance", time_details["name1"])
+					print "\n\n\nattendance____else-----------",attendance
+					attendance.time_in = time_details["mintime"]
+					attendance.time_out = "19:00:00"
+					time_diff = frappe.utils.data.time_diff("19:00:00",time_details["mintime"])
+					print "\n\n----------------timediff-----",type(time_diff),time_diff	
+					attendance.total_hours = str(time_diff)
+
 					attendance.save(ignore_permissions=True)
 					attendance.submit()
 

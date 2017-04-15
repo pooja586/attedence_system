@@ -90,15 +90,16 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
 # 	"all": [
 # 		"conference_management.conference_management.doctype.conference_booking.conference_booking.conference_close",
 		
 # 	]
 # }
-# 	"daily": [
-# 		"attedence_system.tasks.daily"
-# 	],
+	"daily": [
+		"attedence_system.api.api.status_absent",
+		"attedence_system.api.api.time_calculations"
+	],
 # 	"hourly": [
 # 		"attedence_system.tasks.hourly"
 # 	],
@@ -108,7 +109,7 @@ doc_events = {
 # 	"monthly": [
 # 		"attedence_system.tasks.monthly"
 # 	]
-# }
+}
 
 # Testing
 # -------
