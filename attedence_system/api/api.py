@@ -6,9 +6,7 @@ from frappe.utils import nowdate
 
 @frappe.whitelist(allow_guest=True)
 def create_attendance_record(employee,att_date,time):
-	print "\n\n\n\n\n\n employee",employee
-	print "att_date",att_date
-	print "time",time
+
 	emp_name = frappe.db.get_value("Employee",{"name":employee},"employee_name")
 	if emp_name :
 		try:
@@ -50,7 +48,7 @@ def status_absent():
 				attendance_doc.company = emp_details["company"]	         
 				attendance_doc.status = "Absent"
 				attendance_doc.save(ignore_permissions=True)
-				# attendance_doc.submit()
+				#attendance_doc.submit()
 			
 		except Exception, e:
 			print frappe.get_traceback()
@@ -60,7 +58,7 @@ def status_absent():
 @frappe.whitelist(allow_guest=True)
 # to calculate total time duration in in_time (mintime) and out_time(maxtime)
 def time_calculations():
-	times = frappe.db.sql(""" select att.name as name1, attlog.employee as employee,
+	times = frappe.db.sql(""" select att.name as name1, att.status as status, attlog.employee as employee,
 							  attlog.employee_name as employee_name, att.att_date as a_date, convert(attlog.cnt, signed) as counts, 
 							  attlog.max as maxtime, attlog.min as mintime
 							  from `tabAttendance` as att , 
@@ -69,44 +67,45 @@ def time_calculations():
 							  as attlog where attlog.employee =att.employee and att_date = curdate() """, 
 							  as_dict=1)	
 	
-	print "-----------times",times
 	if times:
 		try:
 			for time_details in times:
-				print "count===",time_details["counts"]
-				print "count===",time_details["maxtime"]
-				print "count===",time_details["mintime"]
-				
+				if time_details["status"] != "Absent":
 
-				if (time_details["counts"] % 2) == 0:
-										
-										
-					attendance = frappe.get_doc("Attendance", time_details["name1"])
-					print "\n\n\nattendance____if-----------",attendance
-					attendance.time_in = time_details["mintime"]
-					attendance.time_out = time_details["maxtime"]
-					time_diff=frappe.utils.data.time_diff(time_details["maxtime"],time_details["mintime"])
-					print "\n\n----------------timediff-----",type(time_diff),time_diff					
+					if (time_details["counts"] % 2) == 0:	
+															
+						attendance = frappe.get_doc("Attendance", time_details["name1"])
 
-					attendance.total_hours = str(time_diff)
-					attendance.save(ignore_permissions=True)
-					attendance.submit()
+						attendance.time_in = time_details["mintime"]
+						attendance.time_out = time_details["maxtime"]
+
+						time_diff=frappe.utils.data.time_diff(str(time_details['a_date'])+" "+str(time_details["maxtime"]),str(time_details['a_date'])+" "+str(time_details["mintime"]))
+							
+						attendance.total_time_spent = time_diff
+
+						attendance.save(ignore_permissions=True)
+						attendance.submit()
+
+					else:
+							
+						attendance = frappe.get_doc("Attendance", time_details["name1"])
+							
+						attendance.time_in = time_details["mintime"]
+						attendance.time_out = "19:00:00"
+
+						time_diff = frappe.utils.data.time_diff("19:00:00",time_details["mintime"])
+												
+						attendance.total_time_spent = time_diff
+							
+						attendance.save(ignore_permissions=True)
+						attendance.submit()
 
 				else:
-					
 					attendance = frappe.get_doc("Attendance", time_details["name1"])
-					print "\n\n\nattendance____else-----------",attendance
-					attendance.time_in = time_details["mintime"]
-					attendance.time_out = "19:00:00"
-					time_diff = frappe.utils.data.time_diff("19:00:00",time_details["mintime"])
-					print "\n\n----------------timediff-----",type(time_diff),time_diff	
-					attendance.total_hours = str(time_diff)
-
 					attendance.save(ignore_permissions=True)
 					attendance.submit()
 
 		except Exception, e:
 			print frappe.get_traceback()
 			raise e 
-
-
+		
