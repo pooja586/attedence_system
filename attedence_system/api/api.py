@@ -16,7 +16,7 @@ def create_attendance_record(employee,att_date,time):
 				attendance_doc.employee = employee
 				attendance_doc.att_date = att_date
 				attendance_doc.save(ignore_permissions=True)
-				#attendance_doc.submit()
+				attendance_doc.submit()
 
 			attendance_log = frappe.new_doc("Attendance Log")
 			attendance_log.employee = employee
